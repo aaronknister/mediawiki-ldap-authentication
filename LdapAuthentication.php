@@ -69,6 +69,7 @@ $wgLDAPGroupsPrevail = array();
 $wgLDAPRequiredGroups = array();
 $wgLDAPExcludedGroups = array();
 $wgLDAPGroupSearchNestedGroups = array();
+$wgLDAPGroupAccessControlUseNameAttribute = array();
 $wgLDAPAuthAttribute = array();
 $wgLDAPAutoAuthUsername = "";
 $wgLDAPAutoAuthDomain = "";
@@ -428,6 +429,9 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 		case 'GroupSearchNestedGroups':
 			global $wgLDAPGroupSearchNestedGroups;
 			return self::setOrDefault( $wgLDAPGroupSearchNestedGroups, $domain, false );
+		case 'GroupAccessControlUseNameAttribute':
+			global $wgLDAPGroupAccessControlUseNameAttribute;
+			return self::setOrDefault( $wgLDAPGroupAccessControlUseNameAttribute, $domain, false);
 		case 'AuthAttribute':
 			global $wgLDAPAuthAttribute;
 			return self::setOrDefault( $wgLDAPAuthAttribute, $domain );
@@ -1395,6 +1399,14 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 	function checkGroups( $username ) {
 		$this->printDebug( "Entering checkGroups", NONSENSITIVE );
 
+		$userLDAPGroupsAttr="dn";
+		if ( $this->getConf('GroupAccessControlUseNameAttribute') == true ) {
+			$this->printDebug( "Using group short name for matching", NONSENSITIVE );
+			$userLDAPGroupsAttr="short";
+		} else {
+			$this->printDebug( "Using group DN for matching", NONSENSITIVE );
+		}
+
 		$excgroups = $this->getConf( 'ExcludedGroups' );
 		if ( $excgroups ) {
 			$this->printDebug( "Checking for excluded group membership", NONSENSITIVE );
@@ -1404,7 +1416,7 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 
 			$this->printDebug( "Excluded groups:", NONSENSITIVE, $excgroups );
 
-			foreach ( $this->userLDAPGroups["dn"] as $group ) {
+			foreach ( $this->userLDAPGroups[$userLDAPGroupsAttr] as $group ) {
 				$this->printDebug( "Checking against: $group", NONSENSITIVE );
 				if ( in_array( $group, $excgroups ) ) {
 					$this->printDebug( "Found user in an excluded group.", NONSENSITIVE );
@@ -1422,7 +1434,7 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 
 			$this->printDebug( "Required groups:", NONSENSITIVE, $reqgroups );
 
-			foreach ( $this->userLDAPGroups["dn"] as $group ) {
+			foreach ( $this->userLDAPGroups[$userLDAPGroupsAttr] as $group ) {
 				$this->printDebug( "Checking against: $group", NONSENSITIVE );
 				if ( in_array( $group, $reqgroups ) ) {
 					$this->printDebug( "Found user in a group.", NONSENSITIVE );
