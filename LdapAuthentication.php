@@ -70,6 +70,7 @@ $wgLDAPRequiredGroups = array();
 $wgLDAPExcludedGroups = array();
 $wgLDAPGroupSearchNestedGroups = array();
 $wgLDAPGroupAccessControlUseNameAttribute = array();
+$wgLDAPGroupLocateActiveDirectoryPrimaryGroup = array();
 $wgLDAPAuthAttribute = array();
 $wgLDAPAutoAuthUsername = "";
 $wgLDAPAutoAuthDomain = "";
@@ -432,6 +433,9 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 		case 'GroupAccessControlUseNameAttribute':
 			global $wgLDAPGroupAccessControlUseNameAttribute;
 			return self::setOrDefault( $wgLDAPGroupAccessControlUseNameAttribute, $domain, false);
+		case 'LocateActiveDirectoryPrimaryGroup':
+			global $wgLDAPGroupLocateActiveDirectoryPrimaryGroup;
+			return self::setOrDefault( $wgLDAPGroupLocateActiveDirectoryPrimaryGroup, $domain, true);
 		case 'AuthAttribute':
 			global $wgLDAPAuthAttribute;
 			return self::setOrDefault( $wgLDAPAuthAttribute, $domain );
@@ -1603,7 +1607,8 @@ class LdapAuthenticationPlugin extends AuthPlugin {
 
 		// AD does not include the primary group in the list of groups, we have to find it ourselves.
 		// TODO: find a way to only do this search for AD domains.
-		if ( $dn != "*" ) {
+		$this->printDebug("LocateActiveDirectoryPrimaryGroup is: " . $this->getConf( 'LocateActiveDirectoryPrimaryGroup'),NONSENSITIVE);
+		if ( $dn != "*" and  ( $this->getConf( 'LocateActiveDirectoryPrimaryGroup' ) == true ) ) {
 			$PGfilter = "(&(distinguishedName=$value)(objectclass=user))";
 			$this->printDebug( "User Filter: $PGfilter", SENSITIVE );
 			$PGinfo = LdapAuthenticationPlugin::ldap_search( $this->ldapconn, $base, $PGfilter );
